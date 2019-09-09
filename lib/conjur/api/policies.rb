@@ -46,9 +46,26 @@ module Conjur
     # @param policy [String] YAML-formatted policy definition. 
     # @param account [String] Conjur organization account
     # @param method [Symbol] Policy load method to use: {POLICY_METHOD_POST} (default), {POLICY_METHOD_PATCH}, or {POLICY_METHOD_PUT}.
-    def load_policy id, policy, account: Conjur.configuration.account, method: POLICY_METHOD_POST
+    # @param context [Hash] Additional context data to user during policy load (e.g. for variable provisioning)
+    def load_policy(
+        id, 
+        policy, 
+        account: Conjur.configuration.account, 
+        method: POLICY_METHOD_POST,
+        context: nil
+      )
       request = url_for(:policies_load_policy, credentials, account, id)
-      PolicyLoadResult.new JSON.parse(request.send(method, policy))
+      
+      if context
+        payload = context.merge(
+          policy: policy,
+          multipart: true
+        )
+      else
+        payload = policy
+      end
+      
+      PolicyLoadResult.new JSON.parse(request.send(method, payload))
     end
 
     #@!endgroup
